@@ -1,4 +1,4 @@
-const express = require("express");
+// const express = require("express");
 const router = new express.Router();
 const User = require("../models/user");
 const ExpressError = require("../expressError");
@@ -42,7 +42,6 @@ router.get('/:id', ensureLoggedIn, async (req, res, next) => {
 router.post('/', ensureLoggedIn, async (req, res, next) => {
     try{
         req.body.from_username=req.user.username;
-        console.log(req.body);
         const msg = await Message.create(req.body);
         return res.json({"message": msg});
     } catch(e){
@@ -59,9 +58,7 @@ router.post('/', ensureLoggedIn, async (req, res, next) => {
  **/
 router.post('/:id/read', ensureLoggedIn, async (req, res, next) => {
     try{
-        console.log("read route")
         const {id} = req.params;
-        console.log(id);
         const msg = await Message.get(id);
         if(req.user.username === msg.to_user.username ){
             const results =await Message.markRead(id);

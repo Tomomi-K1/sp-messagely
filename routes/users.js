@@ -27,9 +27,14 @@ router.get('/', ensureLoggedIn, async (req, res, next) => {
 router.get('/:username', ensureCorrectUser, async (req, res, next) => {
     try{
         const {username}=req.params;
-        console.log(username);
         const results = await User.get(username);
         return res.json({"user":results})
+        // this may be smarter way
+        // let user = await User.get(username);
+        // return res.json({user});
+        // here you sign the object returned from User.get to "user" object.
+        // so when you write res.json({user}) will destructure {user: {object}} because you signed object to user variable name
+
     } catch(e){
         return next(e);
     }
@@ -47,8 +52,8 @@ router.get('/:username', ensureCorrectUser, async (req, res, next) => {
 router.get('/:username/to', ensureCorrectUser, async (req, res, next) => {
     try{
         const {username}=req.params;
-        const msgs = await User.messagesTo(username);
-        return res.json({"messages":msgs})
+        const messages = await User.messagesTo(username);
+        return res.json({messages})
     } catch(e){
         return next(e);
     }
@@ -67,8 +72,8 @@ router.get('/:username/to', ensureCorrectUser, async (req, res, next) => {
 router.get('/:username/from', ensureCorrectUser, async (req, res, next) => {
     try{
         const {username}=req.params;
-        const msgs = await User.messagesFrom(username);
-        return res.json({"messages":msgs})
+        const messages = await User.messagesFrom(username);
+        return res.json({messages})
     } catch(e){
         return next(e);
     }

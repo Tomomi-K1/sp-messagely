@@ -13,12 +13,12 @@ class User {
    *    {username, password, first_name, last_name, phone}   */
   static async register({username, password, first_name, last_name, phone}) {
       const hashedPw = await bcrypt.hash(password, BCRYPT_WORK_FACTOR);
-      const curTime = new Date();
       const results = await db.query(
         `INSERT INTO users (username, password, first_name, last_name, phone, join_at, last_login_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)
-         RETURNING username, password, first_name, last_name, phone`, [username, hashedPw, first_name, last_name, phone, curTime, curTime]
+         VALUES ($1, $2, $3, $4, $5, current_timestamp, current_timestamp)
+         RETURNING username, password, first_name, last_name, phone`, [username, hashedPw, first_name, last_name, phone]
       )
+      // SQL has 'current_timestamp' function to get current system's time.
       return results.rows[0];
    }
 
@@ -33,29 +33,34 @@ class User {
      if(user){
         return await bcrypt.compare(password, user.password);
      }
+    //  above is equal to :
+    // return user && await bcrypt.compare(password, user.password);
+
      throw new ExpressError('Invalid username/password', 400)
   }
 
   /** Update last_login_at for user */
 
   static async updateLoginTimestamp(username) { 
-     const loginTime = new Date();
-     await db.query(
-      `UPDATE users SET last_login_at =$1
-       WHERE username =$2`, [loginTime, username]
+     const result = await db.query(
+      `UPDATE users SET last_login_at =current_timestamp
+       WHERE username =$1 RETURNING username`, [username]
      )
+
+     if(!result.rows[0]){
+      throw new ExpressError(`No such user: ${username}`, 404);
+     }
   }
 
   /** All: basic info on all users:
    * [{username, first_name, last_name, phone}, ...] */
 
   static async all() {
-    console.log('getAll')
     const results = await db.query(
       `SELECT username, first_name, last_name, phone 
-      FROM users`);
-      console.log(results.rows)
-    return results.rows
+      FROM users 
+      ORDER BY username`);
+    return results.rows;
   }
   
   /** Get: get user by username
