@@ -3,6 +3,7 @@ const router = new express.Router();
 const User = require("../models/user");
 const ExpressError = require("../expressError");
 const Message = require("../models/message");
+const {ensureLoggedIn, ensureCorrectUser} = require('../middleware/auth')
 
 
 /** GET /:id - get detail of message.
@@ -17,15 +18,15 @@ const Message = require("../models/message");
  * Make sure that the currently-logged-in users is either the to or from user.
  *
  **/
-router.get('/:id', async (req, res, next) => {
+router.get('/:id', ensureLoggedIn, async (req, res, next) => {
     try{
        const {id} = req.params;
        const msg = await Message.get(id); 
-       console.log(msg.to_user.username);
-    //    if(msg.to_user.username !== req.user.username || msg.from_user.username !== req.user.username){
-    //     throw new ExpressError("Not allowed", 400);
-    //    }
-       return res.json(msg);
+
+       if(msg.to_user.username == req.user.username || msg.from_user.username == req.user.username){
+        return res.json(msg);
+       }
+       throw new ExpressError("Not allowed", 400);
     } catch(e){
         return next(e);
     }
@@ -56,6 +57,23 @@ router.post('/', async (req, res, next) => {
  * Make sure that the only the intended recipient can mark as read.
  *
  **/
+router.post('/:id/read', ensureLoggedIn, async (req, res, next) => {
+    try{
+        
+        const {id} = req.params;
+        console.log(id);
+        const msg = await Message.get(id);
+        
+        if(req.user.username === msg.to_user.username ){
+            const results =await Message.markRead(id);
+            return res.json({"message": results});
+        }
+        throw new ExpressError('Not authorized', 400);
+        
+    } catch(e){
+        return next(e);
+    }
+} )
 
 
 module.exports = router;
