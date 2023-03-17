@@ -3,7 +3,7 @@ const router = new express.Router();
 const User = require("../models/user");
 const ExpressError = require("../expressError");
 const Message = require("../models/message");
-const {ensureLoggedIn, ensureCorrectUser} = require('../middleware/auth')
+const {ensureLoggedIn} = require('../middleware/auth')
 
 
 /** GET /:id - get detail of message.
@@ -39,7 +39,7 @@ router.get('/:id', ensureLoggedIn, async (req, res, next) => {
  *   {message: {id, from_username, to_username, body, sent_at}}
  *
  **/
-router.post('/', async (req, res, next) => {
+router.post('/', ensureLoggedIn, async (req, res, next) => {
     try{
         req.body.from_username=req.user.username;
         console.log(req.body);
@@ -59,11 +59,10 @@ router.post('/', async (req, res, next) => {
  **/
 router.post('/:id/read', ensureLoggedIn, async (req, res, next) => {
     try{
-        
+        console.log("read route")
         const {id} = req.params;
         console.log(id);
         const msg = await Message.get(id);
-        
         if(req.user.username === msg.to_user.username ){
             const results =await Message.markRead(id);
             return res.json({"message": results});
